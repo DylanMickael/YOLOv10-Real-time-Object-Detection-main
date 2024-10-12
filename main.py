@@ -1,24 +1,28 @@
 from ultralytics import YOLO 
 import cvzone
 import cv2
+import os
+import time
 
 model = YOLO('yolov10n.pt')
-# results = model('birds.png')
-# results[0].show()
 
-cap = None
+def save_image(image, class_name):
+    if not os.path.exists('captures'):
+        os.makedirs('captures')
+    
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = f'captures/{class_name}_{timestamp}.png'
+    
+    cv2.imwrite(filename, image)
+    print(f"Saved: {filename}")
 
-try:
-    cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
-    if not cap.isOpened():
-        raise Exception("HTTP access error !")
-except Exception as e:
-    print(f"Error : {e}.")
-    cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture("<camera_url>")
+cap = cv2.VideoCapture(0)
 
 while True:
     ret, image = cap.read()
     results = model(image)
+    
     for info in results:
         parameters = info.boxes
         for box in parameters:
@@ -33,6 +37,7 @@ while True:
             
             if class_detected_name == 'toothbrush':
                 print("Toothbrush detected!")
+                save_image(image, class_detected_name)
                 
     cv2.imshow('frame', image)
     if cv2.waitKey(1) & 0xFF == ord('q'):
