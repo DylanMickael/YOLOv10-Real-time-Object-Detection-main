@@ -5,7 +5,7 @@ import os
 import time
 import numpy as np
 
-model = YOLO('best.pt')
+model = YOLO('accident-viewer.pt')
 
 last_capture_time = 0
 capture_interval = 5
@@ -46,8 +46,8 @@ else:
             
             # Check if object is 'accident' and limit captures
             current_time = time.time()
-            if class_detected_name == 'accident':
-                print("Accident detected!")
+            if class_detected_name in ['Minor Accident', 'Non wrong Car', 'Major Accident', 'Wrong Car']:
+                print(f"{class_detected_name} detected!")
 
                 # Capture only if enough time has passed and if it's a new detection
                 if (current_time - last_capture_time > capture_interval) or (class_detected_name != last_class_detected_name):

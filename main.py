@@ -5,7 +5,7 @@ import os
 import time
 import numpy as np
 
-model = YOLO('best.pt')
+model = YOLO('accident-viewer.pt')
 
 # Variables for limiting captures
 last_capture_time = 0
@@ -24,8 +24,7 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
 
-# cv2.VideoCapture(_cameraUrl_) to connect to another camera
-cap = cv2.VideoCapture(0)  
+cap = cv2.VideoCapture("http://192.168.43.1:8080/video")  # Change 0 by the URL of the camera
 
 while True:
     ret, image = cap.read()
@@ -49,8 +48,8 @@ while True:
             
             # Check if object is 'toothbrush' and limit captures
             current_time = time.time()
-            if class_detected_name == 'accident':
-                print("Accident detected!")
+            if class_detected_name in ['Minor Accident', 'Non wrong Car', 'Major Accident', 'Wrong Car']:
+                print(f"{class_detected_name} detected!")
 
                 # Capture only if enough time has passed and if it's a new detection
                 if (current_time - last_capture_time > capture_interval) or (class_detected_name != last_class_detected_name):
