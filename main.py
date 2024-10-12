@@ -19,7 +19,7 @@ def save_image(image, class_name):
         os.makedirs('captures')
     
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    filename = f'captures/{class_name}_{timestamp}.png'
+    filename = f'screenshots/{class_name}_{timestamp}.png'
     
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
