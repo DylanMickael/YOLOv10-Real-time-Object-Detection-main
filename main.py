@@ -4,6 +4,7 @@ import cv2
 import os
 import time
 import numpy as np
+from carDetection import detect_car
 
 model = YOLO('accident-viewer.pt')
 
@@ -24,7 +25,7 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
 
-cap = cv2.VideoCapture("http://192.168.43.1:8080/video")  # Change 0 by the URL of the camera
+cap = cv2.VideoCapture(0)  # Change 0 by the URL of the camera
 
 while True:
     ret, image = cap.read()
@@ -63,14 +64,16 @@ while True:
                         
                         # Only capture if pixel difference exceeds the threshold
                         if non_zero_count > pixel_diff_threshold:
-                            save_image(image, class_detected_name)
-                            last_capture_time = current_time
-                            last_class_detected_name = class_detected_name
+                            if detect_car(image):
+                                save_image(image, class_detected_name)
+                                last_capture_time = current_time
+                                last_class_detected_name = class_detected_name
                     else:
-                        # If no previous image exists, save the first one
-                        save_image(image, class_detected_name)
-                        last_capture_time = current_time
-                        last_class_detected_name = class_detected_name
+                            # If no previous image exists, save the first one
+                            if detect_car(image):
+                                save_image(image, class_detected_name)
+                                last_capture_time = current_time
+                                last_class_detected_name = class_detected_name
 
                     # Update the last image
                     last_image = image.copy()
