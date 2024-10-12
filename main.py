@@ -5,7 +5,7 @@ import os
 import time
 import numpy as np
 
-model = YOLO('yolov10n.pt')
+model = YOLO('best.pt')
 
 # Variables for limiting captures
 last_capture_time = 0
@@ -24,7 +24,8 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
 
-cap = cv2.VideoCapture(0)  # Change 0 by the URL of the camera
+# cv2.VideoCapture(_cameraUrl_) to connect to another camera
+cap = cv2.VideoCapture(0)  
 
 while True:
     ret, image = cap.read()
@@ -48,8 +49,8 @@ while True:
             
             # Check if object is 'toothbrush' and limit captures
             current_time = time.time()
-            if class_detected_name == 'toothbrush':
-                print("Toothbrush detected!")
+            if class_detected_name == 'accident':
+                print("Accident detected!")
 
                 # Capture only if enough time has passed and if it's a new detection
                 if (current_time - last_capture_time > capture_interval) or (class_detected_name != last_class_detected_name):
