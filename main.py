@@ -4,16 +4,31 @@ import cv2
 import os
 import time
 import numpy as np
-from carDetection import detect_car
 
-model = YOLO('accident-viewer.pt')
+# Charger les deux modèles
+model = YOLO('models/trainedYolov.pt')
+modelYOLO = YOLO('models/yolov10n.pt')
 
-# Variables for limiting captures
+# Obtenir les vocabulaires des deux modèles
+vocab1 = model.names  # Returns a dictionary
+vocab2 = modelYOLO.names  # Returns a dictionary
+
+# Convert dictionaries to lists of class names
+vocab1_list = list(vocab1.values())
+vocab2_list = list(vocab2.values())
+
+# Merge the vocabularies
+merged_vocab = list(set(vocab1_list + vocab2_list))
+
+# Créer les mappings pour les classes de chaque modèle vers le vocabulaire fusionné
+mapping1 = {i: merged_vocab.index(name) for i, name in vocab1.items()}
+mapping2 = {i: merged_vocab.index(name) for i, name in vocab2.items()}
+
 last_capture_time = 0
-capture_interval = 5  # seconds
+capture_interval = 5
 last_class_detected_name = None
-last_image = None  # To store the previous frame
-pixel_diff_threshold = 25000  # Adjust this threshold as needed
+last_image = None
+pixel_diff_threshold = 25000
 
 def save_image(image, class_name):
     if not os.path.exists('captures'):
@@ -25,62 +40,88 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
 
-cap = cv2.VideoCapture(0)  # Change 0 by the URL of the camera
+# Ouvrir la webcam
+cap = cv2.VideoCapture(0)
 
-while True:
-    ret, image = cap.read()
-    if not ret:
-        break
-    
-    results = model(image)
-    
-    for info in results:
-        parameters = info.boxes
-        for box in parameters:
-            x1, y1, x2, y2 = box.xyxy[0].numpy().astype('int')
-            confidence = box.conf[0].numpy().astype('int') * 100
-            class_detected_number = box.cls[0]
-            class_detected_number = int(class_detected_number)
-            class_detected_name = results[0].names[class_detected_number]
+if not cap.isOpened():
+    print("Error: Could not open webcam.")
+else:
+    while True:
+        ret, frame = cap.read()
+        
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+        
+        # Appliquer le premier modèle (accident-viewer.pt)
+        results = model(frame)
+        
+        for info in results:
+            parameters = info.boxes
+            for box in parameters:
+                x1, y1, x2, y2 = box.xyxy[0].numpy().astype('int')
+                confidence = box.conf[0].numpy().astype('int') * 100
+                class_detected_number = int(box.cls[0])
+                class_detected_name = vocab1[class_detected_number]  # Nom de classe original
+                
+                # Récupérer le nom de classe fusionné
+                merged_class_name = merged_vocab[mapping1[class_detected_number]]
 
-            # Draw bounding box and label
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3)
-            cvzone.putTextRect(image, f'{class_detected_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
-            
-            # Check if object is 'toothbrush' and limit captures
-            current_time = time.time()
-            if class_detected_name in ['Minor Accident', 'Non wrong Car', 'Major Accident', 'Wrong Car']:
-                print(f"{class_detected_name} detected!")
+                # Dessiner le rectangle et le label
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                cvzone.putTextRect(frame, f'{merged_class_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
+                
+                # Logique de détection d'accident
+                current_time = time.time()
+                if merged_class_name in ['accident']:
+                    print(f"{merged_class_name} detected!")
 
-                # Capture only if enough time has passed and if it's a new detection
-                if (current_time - last_capture_time > capture_interval) or (class_detected_name != last_class_detected_name):
+                    # Capture seulement si le délai est respecté ou nouvelle détection
+                    if (current_time - last_capture_time > capture_interval) or (merged_class_name != last_class_detected_name):
 
-                    # Check if there is a last image and compare pixel differences
-                    if last_image is not None:
-                        diff = cv2.absdiff(last_image, image)
-                        non_zero_count = np.count_nonzero(diff)
+                        # Vérifier la différence de pixels entre les images
+                        if last_image is not None:
+                            diff = cv2.absdiff(last_image, frame)
+                            non_zero_count = np.count_nonzero(diff)
 
-                        print(f"Pixel difference: {non_zero_count}")
-                        
-                        # Only capture if pixel difference exceeds the threshold
-                        if non_zero_count > pixel_diff_threshold:
-                            if detect_car(image):
-                                save_image(image, class_detected_name)
+                            print(f"Pixel difference: {non_zero_count}")
+                            
+                            if non_zero_count > pixel_diff_threshold:
+                                save_image(frame, merged_class_name)
                                 last_capture_time = current_time
-                                last_class_detected_name = class_detected_name
-                    else:
-                            # If no previous image exists, save the first one
-                            if detect_car(image):
-                                save_image(image, class_detected_name)
-                                last_capture_time = current_time
-                                last_class_detected_name = class_detected_name
+                                last_class_detected_name = merged_class_name
+                        else:
+                            save_image(frame, merged_class_name)
+                            last_capture_time = current_time
+                            last_class_detected_name = merged_class_name
 
-                    # Update the last image
-                    last_image = image.copy()
+                        last_image = frame.copy()
 
-    cv2.imshow('frame', image)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        # Appliquer le second modèle (yolov10n.pt) si nécessaire
+        results_yolo = modelYOLO(frame)
+        
+        for info in results_yolo:
+            parameters = info.boxes
+            for box in parameters:
+                x1, y1, x2, y2 = box.xyxy[0].numpy().astype('int')
+                confidence = box.conf[0].numpy().astype('int') * 100
+                class_detected_number = int(box.cls[0])
+                class_detected_name = vocab2[class_detected_number]
+                
+                # Récupérer le nom de classe fusionné
+                merged_class_name = merged_vocab[mapping2[class_detected_number]]
 
+                # Dessiner le rectangle et le label
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 3)
+                cvzone.putTextRect(frame, f'{merged_class_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
+
+        # Afficher le cadre avec les détections
+        cv2.imshow('Webcam Feed', frame)
+
+        # Quitter la boucle si la touche 'q' est pressée
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+# Libérer la webcam et fermer toutes les fenêtres
 cap.release()
 cv2.destroyAllWindows()
