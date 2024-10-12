@@ -138,3 +138,12 @@ def process_image(image):
             cvzone.putTextRect(image, f'{merged_class_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
 
     return image, accident_detected
+
+# image_path = 'Test/images/crash.jpg'
+# image = cv2.imread(image_path)
+
+# if image is None:
+#     print(f"Error: Could not load image from {image_path}")
+# else:
+#     processed_image, accident_detected = process_image(image)
+# cv2.destroyAllWindows()
