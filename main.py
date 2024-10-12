@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 # Charger les deux modèles
-model = YOLO('models/trainedYolov.pt')
+model = YOLO('models/trainedYolo.pt')
 modelYOLO = YOLO('models/yolov10n.pt')
 
 # Obtenir les vocabulaires des deux modèles
@@ -25,7 +25,7 @@ mapping1 = {i: merged_vocab.index(name) for i, name in vocab1.items()}
 mapping2 = {i: merged_vocab.index(name) for i, name in vocab2.items()}
 
 last_capture_time = 0
-capture_interval = 5
+capture_interval = 3
 last_class_detected_name = None
 last_image = None
 pixel_diff_threshold = 25000
@@ -122,6 +122,5 @@ else:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-# Libérer la webcam et fermer toutes les fenêtres
 cap.release()
 cv2.destroyAllWindows()

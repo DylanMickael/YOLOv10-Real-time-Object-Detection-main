@@ -25,7 +25,7 @@ mapping1 = {i: merged_vocab.index(name) for i, name in vocab1.items()}
 mapping2 = {i: merged_vocab.index(name) for i, name in vocab2.items()}
 
 last_capture_time = 0
-capture_interval = 5
+capture_interval = 3
 last_class_detected_name = None
 last_image = None
 pixel_diff_threshold = 25000
@@ -109,8 +109,8 @@ else:
             cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 3)
             cvzone.putTextRect(image, f'{merged_class_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
 
-    # Afficher l'image avec les détections
-    cv2.imshow('frame', image)
-    cv2.waitKey(0)  # Attendre un appui de touche pour fermer la fenêtre
+# Supprimer la partie d'affichage de l'image
+# cv2.imshow('frame', image)
+# cv2.waitKey(0)  # Attendre un appui de touche pour fermer la fenêtre
 
 cv2.destroyAllWindows()
