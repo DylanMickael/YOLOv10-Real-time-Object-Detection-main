@@ -40,15 +40,13 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Saved: {filename}")
 
-# Charger une image de test
-image_path = 'Test/images/crash.jpg'
-image = cv2.imread(image_path)
+def process_image(image):
+    global last_capture_time, last_class_detected_name, last_image
 
-if image is None:
-    print(f"Error: Could not load image from {image_path}")
-else:
     # Appliquer le premier modèle (accident-viewer.pt)
     results = model(image)
+    
+    accident_detected = False  # Flag to track if an accident is detected
     
     for info in results:
         parameters = info.boxes
@@ -69,6 +67,7 @@ else:
             current_time = time.time()
             if merged_class_name in ['accident']:
                 print(f"{merged_class_name} detected!")
+                accident_detected = True  # Set the flag when an accident is detected
 
                 # Capture seulement si le délai est respecté ou nouvelle détection
                 if (current_time - last_capture_time > capture_interval) or (merged_class_name != last_class_detected_name):
@@ -81,15 +80,15 @@ else:
                         print(f"Pixel difference: {non_zero_count}")
                         
                         if non_zero_count > pixel_diff_threshold:
-                            save_image(image, merged_class_name)
                             last_capture_time = current_time
                             last_class_detected_name = merged_class_name
+                            last_image = image.copy()  # Update last_image for next comparison
+                            save_image(image, merged_class_name)  # Save the image directly here
                     else:
-                        save_image(image, merged_class_name)
                         last_capture_time = current_time
                         last_class_detected_name = merged_class_name
-
-                    last_image = image.copy()
+                        last_image = image.copy()  # Update last_image for next comparison
+                        save_image(image, merged_class_name)  # Save the image directly here
 
     # Appliquer le second modèle (yolov10n.pt) si nécessaire
     results_yolo = modelYOLO(image)
@@ -109,8 +108,16 @@ else:
             cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 3)
             cvzone.putTextRect(image, f'{merged_class_name}', [x1 + 8, y1 - 12], thickness=2, scale=1.5)
 
-# Supprimer la partie d'affichage de l'image
-# cv2.imshow('frame', image)
-# cv2.waitKey(0)  # Attendre un appui de touche pour fermer la fenêtre
+    return image, accident_detected
 
-cv2.destroyAllWindows()
+# Charger une image de test
+# image_path = 'Test/images/crash.jpg'
+# image = cv2.imread(image_path)
+
+# if image is None:
+#     print(f"Error: Could not load image from {image_path}")
+# else:
+#     processed_image, accident_detected = process_image(image)
+
+# # Clean up resources
+# cv2.destroyAllWindows()
