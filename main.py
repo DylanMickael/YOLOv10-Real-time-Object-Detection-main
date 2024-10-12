@@ -9,10 +9,10 @@ model = YOLO('yolov10n.pt')
 
 # Variables for limiting captures
 last_capture_time = 0
-capture_interval = 10  # seconds
+capture_interval = 5  # seconds
 last_class_detected_name = None
 last_image = None  # To store the previous frame
-pixel_diff_threshold = 50000  # Adjust this threshold as needed
+pixel_diff_threshold = 25000  # Adjust this threshold as needed
 
 def save_image(image, class_name):
     if not os.path.exists('captures'):
