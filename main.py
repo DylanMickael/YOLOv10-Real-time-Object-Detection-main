@@ -3,7 +3,8 @@ import os
 import time
 from image import process_image
 
-cap = cv2.VideoCapture("http://192.168.43.1:8080/video")
+video_path = 'Test/videos/crash.mp4'  # Ensure the correct file extension
+cap = cv2.VideoCapture(video_path)
 
 fps = cap.get(cv2.CAP_PROP_FPS)
 interval_frames = int(fps * 2)

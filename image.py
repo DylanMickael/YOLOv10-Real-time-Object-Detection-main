@@ -7,6 +7,7 @@ import numpy as np
 import requests
 import json
 import geocoder
+from carVerification import verify_car_in
 
 model = YOLO('models/trainedYolo.pt')
 modelYOLO = YOLO('models/yolov10n.pt')
@@ -36,29 +37,36 @@ def get_phone_location():
         print("Impossible de récupérer la localisation")
         return None, None
     
-def send_image_with_metadata(image_path, class_name, accident_timestamp, server_url):
-    latitude, longitude = get_phone_location()  
-    print(latitude, longitude)
-    
+def send_image_with_metadata(image_path, server_url):
+    latitude, longitude = get_phone_location()
+
     with open(image_path, 'rb') as image_file:
         metadata = {
-            'userId': 1, 
+            'userId': 14, 
             'typeId': 1,
             'latitude': latitude,
             'longitude': longitude,
-            'description': f'Accident détecté par Caméra : {class_name}',
-            'timestamp': accident_timestamp
+            'state': "PENDING",
+            'description': 'Accident détecté par Caméra'
         }
-
-        files = {'assets': image_file}
+        
+        files = {'assets': ('image.png', image_file, 'image/png')}
         data = {'signal': json.dumps(metadata)}
 
         try:
-            response = requests.post(server_url, files=files, data=data)
+            response = requests.post(server_url, files=files, data=data, timeout=20)
+            
             if response.status_code == 200:
                 print(f"Image et métadonnées envoyées avec succès à {server_url}")
             else:
                 print(f"Échec de l'envoi : {response.status_code}")
+        
+        except requests.exceptions.Timeout:
+            print("Erreur lors de l'envoi : Timeout atteint. Le serveur n'a pas répondu à temps.")
+        
+        except requests.exceptions.ConnectionError:
+            print("Erreur lors de l'envoi : Impossible de se connecter au serveur.")
+        
         except Exception as e:
             print(f"Erreur lors de l'envoi : {e}")
 
@@ -72,11 +80,10 @@ def save_image(image, class_name):
     cv2.imwrite(filename, image)
     print(f"Image sauvegardée : {filename}")
     
-    server_url = 'http://localhost:8080/api/signal'
+    server_url = 'http://192.168.117.193:8080/api/signal'
     
     if class_name == 'accident':
-        accident_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        send_image_with_metadata(filename, class_name, accident_timestamp, server_url)
+        send_image_with_metadata(filename, server_url)
 
 def process_image(image):
     global last_capture_time, last_class_detected_name, last_image
@@ -100,7 +107,7 @@ def process_image(image):
             
             current_time = time.time()
             if merged_class_name in ['accident']:
-                print(f"{merged_class_name} detected!")
+                print("Accident detected !")
                 accident_detected = True 
 
                 if (current_time - last_capture_time > capture_interval) or (merged_class_name != last_class_detected_name):
