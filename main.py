@@ -83,7 +83,7 @@ def save_image(image, original_image, class_name):
 
 
 # Capture video from the camera or video stream
-cap = cv2.VideoCapture("http://192.168.117.139:8080/video")
+cap = cv2.VideoCapture(0)
 
 while True:
     ret, image = cap.read()
@@ -106,6 +106,8 @@ while True:
             confidence = box.conf[0].numpy().astype('int') * 100
             class_detected_number = int(box.cls[0])
             class_detected_name = vocab2[class_detected_number]
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3) 
+            cv2.putText(image, f'{class_detected_name}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
             # Check for car or truck to detect an accident
             if class_detected_name in ['car', 'truck']:
@@ -113,8 +115,6 @@ while True:
                 print("Accident detected!")
                 
                 # Draw red rectangle and label for accident
-                cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3) 
-                cv2.putText(image, f'Accident', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
                 # Save the image if an accident is detected
                 if (time.time() - last_capture_time > capture_interval) or (last_image is None):
