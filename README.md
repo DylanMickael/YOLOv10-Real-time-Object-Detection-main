@@ -75,8 +75,8 @@ You can customize the object detection behavior by modifying the detection logic
 - **To detect specific objects (like a toothbrush)**, modify the detection condition in `main.py`:
 
    ```python
-   if class_detected_name == 'toothbrush':
-       print("Toothbrush detected!")
+   if class_detected_name == 'car':
+       print("Car detected!")
    ```
 
 - **Switch video source:** You can easily switch between webcam and IP camera by changing the video source in the `cap` initialization.
